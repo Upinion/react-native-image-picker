@@ -301,7 +301,7 @@ public class ImagePickerModule extends ReactContextBaseJavaModule implements Act
          }
         break;
 
-      case REQUEST_CROP_PICTURE:
+      case REQUEST_CROP_PICTURE: //used for the cropping functionality
         uri = mCameraCaptureURI;
         break;
       case REQUEST_LAUNCH_IMAGE_LIBRARY:
