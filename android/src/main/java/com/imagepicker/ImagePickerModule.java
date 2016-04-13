@@ -2,6 +2,7 @@ package com.imagepicker;
 
 import android.app.Activity;
 import android.app.AlertDialog;
+import android.content.pm.ActivityInfo;
 import android.content.ActivityNotFoundException;
 import android.content.DialogInterface;
 import android.content.Intent;
@@ -210,6 +211,7 @@ public class ImagePickerModule extends ReactContextBaseJavaModule implements Act
       File imageFile = createNewFile(true);
       mCameraCaptureURI = Uri.fromFile(imageFile);
       cameraIntent.putExtra(MediaStore.EXTRA_OUTPUT, Uri.fromFile(imageFile));
+      cameraIntent.putExtra(MediaStore.EXTRA_SCREEN_ORIENTATION, ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
 
 
     }
@@ -354,30 +356,8 @@ public class ImagePickerModule extends ReactContextBaseJavaModule implements Act
     }
 
     int CurrentAngle = 0;
-    try {
-      ExifInterface exif = new ExifInterface(realPath);
-      int orientation = exif.getAttributeInt(ExifInterface.TAG_ORIENTATION, ExifInterface.ORIENTATION_NORMAL);
-      boolean isVertical = true;
-      switch (orientation) {
-        case ExifInterface.ORIENTATION_ROTATE_270:
-          isVertical = false;
-          CurrentAngle = 270;
-          break;
-        case ExifInterface.ORIENTATION_ROTATE_90:
-          isVertical = false;
-          CurrentAngle = 90;
-          break;
-        case ExifInterface.ORIENTATION_ROTATE_180:
-          CurrentAngle = 180;
-          break;
-      }
-      response.putBoolean("isVertical", isVertical);
-    } catch (IOException e) {
-      e.printStackTrace();
-      response.putString("error", e.getMessage());
-      mCallback.invoke(response);
-      return;
-    }
+    boolean isVertical = true;
+    response.putBoolean("isVertical", isVertical);
 
     BitmapFactory.Options options = new BitmapFactory.Options();
     options.inJustDecodeBounds = true;
