@@ -41,6 +41,7 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+import java.lang.Exception;
 
 
 public class ImagePickerModule extends ReactContextBaseJavaModule implements ActivityEventListener {
@@ -294,13 +295,6 @@ public class ImagePickerModule extends ReactContextBaseJavaModule implements Act
     switch (requestCode) {
       case REQUEST_LAUNCH_IMAGE_CAPTURE:
         uri = mCameraCaptureURI;
-        if(allowEditing){
-            CropImageIntentBuilder cropImage = new CropImageIntentBuilder(maxWidth, maxHeight, mCameraCaptureURI);
-            cropImage.setOutlineColor(0xFF03A9F4);
-            cropImage.setSourceImage(uri);
-            getCurrentActivity().startActivityForResult(cropImage.getIntent(mReactContext.getApplicationContext()), REQUEST_CROP_PICTURE);
-            return;
-         }
         break;
 
       case REQUEST_CROP_PICTURE: //used for the cropping functionality
@@ -308,13 +302,6 @@ public class ImagePickerModule extends ReactContextBaseJavaModule implements Act
         break;
       case REQUEST_LAUNCH_IMAGE_LIBRARY:
         uri = data.getData();
-        if(allowEditing){
-            CropImageIntentBuilder cropImage = new CropImageIntentBuilder(maxWidth, maxHeight, mCameraCaptureURI);
-            cropImage.setOutlineColor(0xFF03A9F4);
-            cropImage.setSourceImage(uri);
-            getCurrentActivity().startActivityForResult(cropImage.getIntent(mReactContext.getApplicationContext()), REQUEST_CROP_PICTURE);
-            return;
-        }
         break;
       case REQUEST_LAUNCH_VIDEO_LIBRARY:
         response.putString("uri", data.getData().toString());
@@ -357,6 +344,30 @@ public class ImagePickerModule extends ReactContextBaseJavaModule implements Act
 
     int CurrentAngle = 0;
     boolean isVertical = true;
+    try {
+          ExifInterface exif = new ExifInterface(realPath);
+          int orientation = exif.getAttributeInt(ExifInterface.TAG_ORIENTATION, ExifInterface.ORIENTATION_NORMAL);
+          isVertical = true;
+          switch (orientation) {
+            case ExifInterface.ORIENTATION_ROTATE_270:
+              isVertical = false;
+              CurrentAngle = 270;
+              break;
+            case ExifInterface.ORIENTATION_ROTATE_90:
+              isVertical = false;
+              CurrentAngle = 90;
+              break;
+            case ExifInterface.ORIENTATION_ROTATE_180:
+              CurrentAngle = 180;
+              break;
+          }
+          response.putBoolean("isVertical", isVertical);
+        } catch (IOException e) {
+          e.printStackTrace();
+          response.putString("error", e.getMessage());
+          mCallback.invoke(response);
+          return;
+        }
     response.putBoolean("isVertical", isVertical);
 
     BitmapFactory.Options options = new BitmapFactory.Options();
@@ -372,14 +383,22 @@ public class ImagePickerModule extends ReactContextBaseJavaModule implements Act
       response.putInt("width", initialWidth);
       response.putInt("height", initialHeight);
     } else {
-      File resized = getResizedImage(getRealPathFromURI(uri), initialWidth, initialHeight);
-      realPath = resized.getAbsolutePath();
-      uri = Uri.fromFile(resized);
+      if (!(requestCode == REQUEST_LAUNCH_IMAGE_CAPTURE || requestCode == REQUEST_LAUNCH_IMAGE_LIBRARY)) {
+        File resized = getResizedImage(getRealPathFromURI(uri), initialWidth, initialHeight);
+        realPath = resized.getAbsolutePath();
+        uri = Uri.fromFile(resized);
+      }
       photo = BitmapFactory.decodeFile(realPath, options);
       response.putInt("width", options.outWidth);
       response.putInt("height", options.outHeight);
     }
-
+    if(allowEditing && (requestCode == REQUEST_LAUNCH_IMAGE_CAPTURE || requestCode == REQUEST_LAUNCH_IMAGE_LIBRARY)){
+      CropImageIntentBuilder cropImage = new CropImageIntentBuilder(maxWidth, maxHeight, mCameraCaptureURI);
+      cropImage.setOutlineColor(0xFF03A9F4);
+      cropImage.setSourceImage(uri);
+      getCurrentActivity().startActivityForResult(cropImage.getIntent(mReactContext.getApplicationContext()), REQUEST_CROP_PICTURE);
+      return;
+    }
     response.putString("uri", uri.toString());
     response.putString("path", realPath);
 
@@ -390,17 +409,22 @@ public class ImagePickerModule extends ReactContextBaseJavaModule implements Act
   }
 
   private String getRealPathFromURI(Uri uri) {
-    String result;
+    String result = null;
     String[] projection = {MediaStore.Images.Media.DATA};
+    try{
     Cursor cursor = mReactContext.getContentResolver().query(uri, projection, null, null, null);
-    if (cursor == null) { // Source is Dropbox or other similar local file path
-      result = uri.getPath();
-    } else {
-      cursor.moveToFirst();
-      int idx = cursor.getColumnIndexOrThrow(MediaStore.Images.Media.DATA);
-      result = cursor.getString(idx);
-      cursor.close();
+      if (cursor == null) { // Source is Dropbox or other similar local file path
+        result = uri.getPath();
+      } else {
+        cursor.moveToFirst();
+        int idx = cursor.getColumnIndexOrThrow(MediaStore.Images.Media.DATA);
+        result = cursor.getString(idx);
+        cursor.close();
+      }
+    }catch(Exception e){
+        e.printStackTrace();
     }
+
     return result;
   }
 
