@@ -35,15 +35,18 @@ class UriImage implements IImage {
     private final Uri mUri;
     private final IImageList mContainer;
     private final ContentResolver mContentResolver;
+    private int orientation;
+    private BitmapFactory.Options options;
 
     UriImage(IImageList container, ContentResolver cr, Uri uri) {
         mContainer = container;
         mContentResolver = cr;
         mUri = uri;
+        orientation = 0;
     }
 
     public int getDegreesRotated() {
-        return 0;
+        return orientation;
     }
 
     public String getDataPath() {
@@ -93,7 +96,7 @@ class UriImage implements IImage {
             ParcelFileDescriptor pfdInput = getPFD();
             Bitmap b = Util.makeBitmap(minSideLength, maxNumberOfPixels,
                     pfdInput, useNative);
-            return b;
+            return Util.rotate(b, orientation);
         } catch (Exception ex) {
             Log.e(TAG, "got exception decoding bitmap ", ex);
             return null;
@@ -144,12 +147,18 @@ class UriImage implements IImage {
 
     public int getHeight() {
         BitmapFactory.Options options = snifBitmapOptions();
-        return (options != null) ? options.outHeight : 0;
+        if (orientation == 90 || orientation == 270)
+            return (options != null) ? options.outWidth : 0;
+        else
+            return (options != null) ? options.outHeight : 0;
     }
 
     public int getWidth() {
         BitmapFactory.Options options = snifBitmapOptions();
-        return (options != null) ? options.outWidth : 0;
+        if (orientation == 90 || orientation == 270)
+            return (options != null) ? options.outHeight : 0;
+        else
+            return (options != null) ? options.outWidth : 0;
     }
 
     public IImageList getContainer() {
@@ -169,6 +178,7 @@ class UriImage implements IImage {
     }
 
     public boolean rotateImageBy(int degrees) {
-        return false;
+        orientation = (getDegreesRotated() + degrees) % 360;
+        return true;
     }
 }

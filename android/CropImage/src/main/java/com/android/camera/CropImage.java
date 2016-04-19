@@ -42,10 +42,13 @@ import android.view.View;
 import android.view.Window;
 import android.view.WindowManager;
 import android.widget.Toast;
+import android.content.pm.ActivityInfo;
 
 import com.android.camera.gallery.IImage;
 import com.android.camera.gallery.IImageList;
 
+import java.lang.Integer;
+import java.lang.Boolean;
 import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
@@ -93,6 +96,7 @@ public class CropImage extends MonitoredActivity {
     @Override
     public void onCreate(Bundle icicle) {
         super.onCreate(icicle);
+        this.setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
         mContentResolver = getContentResolver();
 
         requestWindowFeature(Window.FEATURE_NO_TITLE);
@@ -148,15 +152,20 @@ public class CropImage extends MonitoredActivity {
 
         if (mBitmap == null) {
             Uri target = intent.getData();
+            Integer orientation = ImageManager.getExifOrientation(target.getPath());
+            
             mAllImages = ImageManager.makeImageList(mContentResolver, target,
                     ImageManager.SORT_ASCENDING);
             mImage = mAllImages.getImageForUri(target);
+            if (orientation != 0) {
+                mImage.rotateImageBy(orientation);
+            }
             if (mImage != null) {
                 // Don't read in really large bitmaps. Use the (big) thumbnail
                 // instead.
                 // TODO when saving the resulting bitmap use the
                 // decode/crop/encode api so we don't lose any resolution.
-                mBitmap = mImage.thumbBitmap(IImage.ROTATE_AS_NEEDED);
+                mBitmap = mImage.thumbBitmap(IImage.ROTATE_AS_NEEDED); 
             }
         }
 
@@ -191,7 +200,7 @@ public class CropImage extends MonitoredActivity {
             return;
         }
 
-        mImageView.setImageBitmapResetBase(mBitmap, true);
+        mImageView.setImageBitmapResetBase(mBitmap, false);
 
         Util.startBackgroundJob(this, null,
                 getResources().getString(R.string.runningFaceDetection),

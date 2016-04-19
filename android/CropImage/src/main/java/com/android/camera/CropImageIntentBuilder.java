@@ -68,7 +68,6 @@ public class CropImageIntentBuilder {
     private final int aspectY;
     private final int outputX;
     private final int outputY;
-    private final Uri saveUri;
 
     /**
      * Constructor.
@@ -77,12 +76,10 @@ public class CropImageIntentBuilder {
      *        Output vertical size in pixels.
      * @param outputY
      *        Output horizontal size in pixels.
-     * @param saveUri
-     *        Output file URI.
      * @since 1.0.1
      */
-    public CropImageIntentBuilder(final int outputX, final int outputY, final Uri saveUri) {
-        this(DEFAULT_SCALE, DEFAULT_SCALE, outputX, outputY, saveUri);
+    public CropImageIntentBuilder(final int outputX, final int outputY) {
+        this(DEFAULT_SCALE, DEFAULT_SCALE, outputX, outputY);
     }
 
     /**
@@ -96,17 +93,14 @@ public class CropImageIntentBuilder {
      *        Output vertical size in pixels.
      * @param outputY
      *        Output horizontal size in pixels.
-     * @param saveUri
-     *        Output file URI.
      * @since 1.0.1
      */
     public CropImageIntentBuilder(final int aspectX, final int aspectY, final int outputX,
-            final int outputY, final Uri saveUri) {
+            final int outputY) {
         this.aspectX = aspectX;
         this.aspectY = aspectY;
         this.outputX = outputX;
         this.outputY = outputY;
-        this.saveUri = saveUri;
     }
 
     /**
@@ -128,7 +122,6 @@ public class CropImageIntentBuilder {
         intent.putExtra(EXTRA_ASPECT_Y, this.aspectY);
         intent.putExtra(EXTRA_OUTPUT_X, this.outputX);
         intent.putExtra(EXTRA_OUTPUT_Y, this.outputY);
-        intent.putExtra(MediaStore.EXTRA_OUTPUT, this.saveUri);
 
         //
         // Optional Intent Extras
