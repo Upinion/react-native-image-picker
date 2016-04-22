@@ -62,6 +62,7 @@ public class ImagePickerModule extends ReactContextBaseJavaModule implements Act
 
   private final ReactApplicationContext mReactContext;
 
+  private Activity mReactActivity;
   private Uri mCameraCaptureURI;
   private File mCameraCaptureFile;
   private Uri mCropImagedUri;
@@ -98,7 +99,8 @@ public class ImagePickerModule extends ReactContextBaseJavaModule implements Act
 
   @ReactMethod
   public void showImagePicker(final ReadableMap options, final Callback callback) {
-    Activity currentActivity = getCurrentActivity();
+    mReactActivity = getCurrentActivity();
+    Activity currentActivity = mReactActivity;
     response = Arguments.createMap();
 
     if (currentActivity == null) {
@@ -226,7 +228,7 @@ public class ImagePickerModule extends ReactContextBaseJavaModule implements Act
 
     mCallback = callback;
     try {
-        mReactContext.startActivityForResult(cameraIntent, requestCode, null);
+        mReactActivity.startActivityForResult(cameraIntent, requestCode, null);
     } catch (ActivityNotFoundException e) {
       e.printStackTrace();
     }
@@ -259,7 +261,7 @@ public class ImagePickerModule extends ReactContextBaseJavaModule implements Act
 
     mCallback = callback;
     try {
-      mReactContext.startActivityForResult(libraryIntent, requestCode, null);
+      mReactActivity.startActivityForResult(libraryIntent, requestCode, null);
     } catch (ActivityNotFoundException e) {
       e.printStackTrace();
     }
@@ -295,10 +297,10 @@ public class ImagePickerModule extends ReactContextBaseJavaModule implements Act
             cropImage.setSourceImage(uri);
             cropIntent = cropImage.getIntent(mReactContext.getApplicationContext());
             cropIntent.putExtra("return-data", true);
-            mReactContext.startActivityForResult(cropIntent, REQUEST_CROP_PICTURE, null);
+            mReactActivity.startActivityForResult(cropIntent, REQUEST_CROP_PICTURE, null);
         } else {
             Intent libraryIntent = new Intent(Intent.ACTION_PICK, android.provider.MediaStore.Images.Media.EXTERNAL_CONTENT_URI);      
-            mReactContext.startActivityForResult(libraryIntent, requestCode, null);
+            mReactActivity.startActivityForResult(libraryIntent, requestCode, null);
         }
         break;
       case REQUEST_CROP_PICTURE: //used for the cropping functionality
@@ -311,7 +313,7 @@ public class ImagePickerModule extends ReactContextBaseJavaModule implements Act
         cropImage.setSourceImage(data.getData());
         cropIntent = cropImage.getIntent(mReactContext.getApplicationContext());
         cropIntent.putExtra("return-data", true);
-        mReactContext.startActivityForResult(cropIntent, REQUEST_CROP_PICTURE, null);
+        mReactActivity.startActivityForResult(cropIntent, REQUEST_CROP_PICTURE, null);
         break;
       case REQUEST_LAUNCH_VIDEO_LIBRARY:
         response.putString("uri", data.getData().toString());
