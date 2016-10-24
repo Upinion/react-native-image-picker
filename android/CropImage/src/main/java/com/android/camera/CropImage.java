@@ -499,8 +499,8 @@ public class CropImage extends MonitoredActivity {
 
             Rect imageRect = new Rect(0, 0, width, height);
 
-            // make the default size about 4/5 of the width or height
-            int cropWidth = Math.min(width, height) * 4 / 5;
+            // make the smallest side of the picture the default size
+            int cropWidth = Math.min(width, height);
             int cropHeight = cropWidth;
 
             if (mAspectX != 0 && mAspectY != 0) {
