@@ -24,6 +24,7 @@ import android.content.pm.ActivityInfo;
 import android.content.res.Configuration;
 
 import com.facebook.react.bridge.ActivityEventListener;
+import com.facebook.react.bridge.BaseActivityEventListener;
 import com.facebook.react.bridge.Arguments;
 import com.facebook.react.bridge.Callback;
 import com.facebook.react.bridge.ReactApplicationContext;
@@ -52,7 +53,7 @@ import java.lang.Boolean;
 import java.text.SimpleDateFormat;
 
 
-public class ImagePickerModule extends ReactContextBaseJavaModule implements ActivityEventListener {
+public class ImagePickerModule extends ReactContextBaseJavaModule {
 
   static final int REQUEST_LAUNCH_IMAGE_CAPTURE = 1;
   static final int REQUEST_LAUNCH_IMAGE_LIBRARY = 2;
@@ -84,10 +85,72 @@ public class ImagePickerModule extends ReactContextBaseJavaModule implements Act
   private int cropHeight = 0;
   WritableMap response;
 
+  private final ActivityEventListener mActivityEventListener = new BaseActivityEventListener() {
+      @Override
+      public void onActivityResult(final Activity mReactActivity, final int requestCode, final int resultCode, final Intent data) {
+          //robustness code
+          if (mCallback == null || (
+                      requestCode != REQUEST_LAUNCH_IMAGE_CAPTURE && requestCode != REQUEST_LAUNCH_IMAGE_LIBRARY
+                      && requestCode != REQUEST_LAUNCH_VIDEO_LIBRARY && requestCode != REQUEST_LAUNCH_VIDEO_CAPTURE
+                      && requestCode != REQUEST_CROP_PICTURE)) {
+              return;
+                      }
+
+          // user cancel
+          if (resultCode != Activity.RESULT_OK) {
+              response.putBoolean("didCancel", true);
+              mCallback.invoke(response);
+              return;
+          }
+
+          Uri uri;
+          String realPath=null;
+          CropImageIntentBuilder cropImage;
+          Intent cropIntent;
+          switch (requestCode) {
+
+              case REQUEST_LAUNCH_IMAGE_CAPTURE:
+                  if (mCameraCaptureURI != null && mCameraCaptureFile.exists()) {
+                      uri = mCameraCaptureURI;
+                      cropImage = new CropImageIntentBuilder(maxWidth, maxHeight);
+                      cropImage.setOutlineColor(0xFF03A9F4);
+                      cropImage.setSourceImage(uri);
+                      cropIntent = cropImage.getIntent(mReactContext.getApplicationContext());
+                      cropIntent.putExtra("return-data", true);
+                      mReactActivity.startActivityForResult(cropIntent, REQUEST_CROP_PICTURE, null);
+                  } else {
+                      Intent libraryIntent = new Intent(Intent.ACTION_PICK, android.provider.MediaStore.Images.Media.EXTERNAL_CONTENT_URI);      
+                      mReactActivity.startActivityForResult(libraryIntent, requestCode, null);
+                  }
+                  break;
+              case REQUEST_CROP_PICTURE: //used for the cropping functionality
+                  response.putString("data", encodeTobase64((Bitmap)data.getExtras().getParcelable("data")));
+                  mCallback.invoke(response);
+                  break;
+              case REQUEST_LAUNCH_IMAGE_LIBRARY:
+                  cropImage = new CropImageIntentBuilder(maxWidth, maxHeight);
+                  cropImage.setOutlineColor(0xFF03A9F4);
+                  cropImage.setSourceImage(data.getData());
+                  cropIntent = cropImage.getIntent(mReactContext.getApplicationContext());
+                  cropIntent.putExtra("return-data", true);
+                  mReactActivity.startActivityForResult(cropIntent, REQUEST_CROP_PICTURE, null);
+                  break;
+              case REQUEST_LAUNCH_VIDEO_LIBRARY:
+                  response.putString("uri", data.getData().toString());
+                  mCallback.invoke(response);
+                  break;
+              case REQUEST_LAUNCH_VIDEO_CAPTURE:
+                  response.putString("uri", data.getData().toString());
+                  mCallback.invoke(response);
+                  break;
+          }
+      } 
+  };
+
   public ImagePickerModule(ReactApplicationContext reactContext) {
     super(reactContext);
 
-    reactContext.addActivityEventListener(this);
+    reactContext.addActivityEventListener(mActivityEventListener);
 
     mReactContext = reactContext;
   }
@@ -267,64 +330,7 @@ public class ImagePickerModule extends ReactContextBaseJavaModule implements Act
     }
   }
 
-  public void onActivityResult(final int requestCode, final int resultCode, final Intent data) {
-    //robustness code
-    if (mCallback == null || (
-            requestCode != REQUEST_LAUNCH_IMAGE_CAPTURE && requestCode != REQUEST_LAUNCH_IMAGE_LIBRARY
-            && requestCode != REQUEST_LAUNCH_VIDEO_LIBRARY && requestCode != REQUEST_LAUNCH_VIDEO_CAPTURE
-            && requestCode != REQUEST_CROP_PICTURE)) {
-      return;
-    }
-
-    // user cancel
-    if (resultCode != Activity.RESULT_OK) {
-      response.putBoolean("didCancel", true);
-      mCallback.invoke(response);
-      return;
-    }
-
-    Uri uri;
-    String realPath=null;
-    CropImageIntentBuilder cropImage;
-    Intent cropIntent;
-    switch (requestCode) {
-
-      case REQUEST_LAUNCH_IMAGE_CAPTURE:
-        if (mCameraCaptureURI != null && mCameraCaptureFile.exists()) {
-            uri = mCameraCaptureURI;
-            cropImage = new CropImageIntentBuilder(maxWidth, maxHeight);
-            cropImage.setOutlineColor(0xFF03A9F4);
-            cropImage.setSourceImage(uri);
-            cropIntent = cropImage.getIntent(mReactContext.getApplicationContext());
-            cropIntent.putExtra("return-data", true);
-            mReactActivity.startActivityForResult(cropIntent, REQUEST_CROP_PICTURE, null);
-        } else {
-            Intent libraryIntent = new Intent(Intent.ACTION_PICK, android.provider.MediaStore.Images.Media.EXTERNAL_CONTENT_URI);      
-            mReactActivity.startActivityForResult(libraryIntent, requestCode, null);
-        }
-        break;
-      case REQUEST_CROP_PICTURE: //used for the cropping functionality
-        response.putString("data", encodeTobase64((Bitmap)data.getExtras().getParcelable("data")));
-        mCallback.invoke(response);
-        break;
-      case REQUEST_LAUNCH_IMAGE_LIBRARY:
-        cropImage = new CropImageIntentBuilder(maxWidth, maxHeight);
-        cropImage.setOutlineColor(0xFF03A9F4);
-        cropImage.setSourceImage(data.getData());
-        cropIntent = cropImage.getIntent(mReactContext.getApplicationContext());
-        cropIntent.putExtra("return-data", true);
-        mReactActivity.startActivityForResult(cropIntent, REQUEST_CROP_PICTURE, null);
-        break;
-      case REQUEST_LAUNCH_VIDEO_LIBRARY:
-        response.putString("uri", data.getData().toString());
-        mCallback.invoke(response);
-        break;
-      case REQUEST_LAUNCH_VIDEO_CAPTURE:
-        response.putString("uri", data.getData().toString());
-        mCallback.invoke(response);
-        break;
-    }
-  }
+  
 
   private static String encodeTobase64(Bitmap image) {
       Bitmap immagex=image;
@@ -552,4 +558,3 @@ public class ImagePickerModule extends ReactContextBaseJavaModule implements Act
 
   }
 }
-
