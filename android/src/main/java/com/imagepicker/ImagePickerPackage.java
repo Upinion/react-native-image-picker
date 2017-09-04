@@ -1,5 +1,7 @@
 package com.imagepicker;
 
+import android.support.annotation.StyleRes;
+
 import com.facebook.react.ReactPackage;
 import com.facebook.react.bridge.JavaScriptModule;
 import com.facebook.react.bridge.NativeModule;
@@ -11,9 +13,17 @@ import java.util.Collections;
 import java.util.List;
 
 public class ImagePickerPackage implements ReactPackage {
+  public static final int DEFAULT_EXPLAINING_PERMISSION_DIALOG_THEME = android.R.style.Theme_DeviceDefault_Light_Dialog_Alert;
+  private @StyleRes final int dialogThemeId;
+
+  public ImagePickerPackage()
+  {
+    this.dialogThemeId = DEFAULT_EXPLAINING_PERMISSION_DIALOG_THEME;
+  }
+
   @Override
   public List<NativeModule> createNativeModules(ReactApplicationContext reactContext) {
-    return Arrays.<NativeModule>asList(new ImagePickerModule(reactContext));
+    return Arrays.<NativeModule>asList(new ImagePickerModule(reactContext, dialogThemeId));
   }
 
   @Override
