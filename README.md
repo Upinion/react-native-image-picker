@@ -55,8 +55,29 @@ dependencies {
     <uses-feature android:name="android.hardware.camera" android:required="true"/>
     <uses-feature android:name="android.hardware.camera.autofocus" />
     <!-- -->
+    <!-- and the provider to read/write pictures -->
+    <application ...
+      <provider
+        android:name="android.support.v4.content.FileProvider"
+        android:authorities="${applicationId}.com.imagepicker.provider"
+        android:exported="false"
+        android:grantUriPermissions="true">
+        <meta-data
+            android:name="android.support.FILE_PROVIDER_PATHS"
+            android:resource="@xml/provider_paths"/>
+      </provider>
+    </application>
     ...
 ```
+
+```xml
+<!-- file: android/src/main/res/provider_paths.xml -->
+<?xml version="1.0" encoding="utf-8"?>
+<paths xmlns:android="http://schemas.android.com/apk/res/android">
+    <external-path name="external_files" path="Pictures"/>
+</paths>
+```
+
 ```java
 // file: MainActivity.java
 ...
