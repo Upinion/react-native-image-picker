@@ -23,6 +23,7 @@ import android.provider.Settings;
 import android.util.Base64;
 import android.widget.ArrayAdapter;
 import android.util.Log;
+import android.os.Build;
 import android.os.Bundle;
 import com.android.camera.CropImageIntentBuilder;
 import com.android.camera.CameraCustomIntentBuilder;
@@ -30,6 +31,7 @@ import android.content.pm.ActivityInfo;
 import android.content.pm.PackageManager;
 import android.content.res.Configuration;
 import android.support.v4.app.ActivityCompat;
+import android.support.v4.content.FileProvider;
 import android.support.annotation.NonNull;
 import android.support.annotation.StyleRes;
 
@@ -343,7 +345,16 @@ public class ImagePickerModule extends ReactContextBaseJavaModule {
         mCameraCaptureFile = createNewFile();
         mCameraCaptureURI = null;
         if (mCameraCaptureFile != null) {
-            mCameraCaptureURI = Uri.fromFile(mCameraCaptureFile);
+            // Fix for SDK > 24 need to use FileProvider
+            if (Build.VERSION.SDK_INT >= 24) {
+                mCameraCaptureURI = FileProvider.getUriForFile(
+                    mReactContext,
+                    mReactContext.getApplicationContext().getPackageName() + ".com.imagepicker.provider",
+                    mCameraCaptureFile
+                );
+            } else {
+                mCameraCaptureURI = Uri.fromFile(mCameraCaptureFile);
+            }
         }
         cameraIntent.putExtra(MediaStore.EXTRA_OUTPUT, mCameraCaptureURI);
     }
