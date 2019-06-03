@@ -349,7 +349,7 @@ public class ImagePickerModule extends ReactContextBaseJavaModule {
             if (Build.VERSION.SDK_INT >= 24) {
                 mCameraCaptureURI = FileProvider.getUriForFile(
                     mReactContext,
-                    mReactContext.getApplicationContext().getPackageName() + ".com.imagepicker.provider",
+                    mReactContext.getApplicationContext().getPackageName() + ".provider",
                     mCameraCaptureFile
                 );
             } else {
