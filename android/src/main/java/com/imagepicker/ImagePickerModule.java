@@ -30,10 +30,10 @@ import com.android.camera.CameraCustomIntentBuilder;
 import android.content.pm.ActivityInfo;
 import android.content.pm.PackageManager;
 import android.content.res.Configuration;
-import android.support.v4.app.ActivityCompat;
-import android.support.v4.content.FileProvider;
-import android.support.annotation.NonNull;
-import android.support.annotation.StyleRes;
+import androidx.core.app.ActivityCompat;
+import androidx.core.content.FileProvider;
+import androidx.annotation.NonNull;
+import androidx.annotation.StyleRes;
 
 import com.facebook.react.ReactActivity;
 import com.facebook.react.bridge.ActivityEventListener;
@@ -671,7 +671,7 @@ public class ImagePickerModule extends ReactContextBaseJavaModule {
 
       if (dontAskAgain)
       {
-        final android.support.v7.app.AlertDialog dialog = PermissionUtils
+        final androidx.appcompat.app.AlertDialog dialog = PermissionUtils
           .explainingDialog(this, mOptions, new PermissionUtils.OnExplainingPermissionCallback()
         {
           @Override
